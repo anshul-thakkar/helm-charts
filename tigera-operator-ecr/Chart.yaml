@@ -1,0 +1,4 @@
+apiVersion: v2
+description: Installs the Tigera operator for Calico
+name: tigera-operator
+version: 3.27.7

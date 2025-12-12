@@ -1,0 +1,23 @@
+namespace: kube-system
+installation:
+  enabled: false
+  kubernetesProvider: ""
+apiServer:
+  enabled: true
+certs:
+  node:
+    key:
+    cert:
+    commonName:
+  typha:
+    key:
+    cert:
+    commonName:
+    caBundle:
+tigeraOperator:
+  image: tigera/operator
+  version: v1.20.0
+  registry: quay.io
+calicoctl:
+  image: quay.io/docker.io/calico/ctl
+  tag: v3.20.0
