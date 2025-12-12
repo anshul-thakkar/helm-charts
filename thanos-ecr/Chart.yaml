@@ -1,0 +1,19 @@
+apiVersion: v2
+appVersion: 0.38.0
+description: Thanos is a highly available metrics system that can be added on top
+  of existing Prometheus deployments, providing a global query view across all Prometheus
+  installations.
+home: https://bitnami.com
+icon: https://dyltqmyl993wv.cloudfront.net/assets/stacks/thanos/img/thanos-stack-220x234.png
+keywords:
+- analytics
+- monitoring
+- prometheus
+- thanos
+maintainers:
+- name: Broadcom, Inc. All Rights Reserved.
+  url: https://github.com/bitnami/charts
+name: thanos
+sources:
+- https://github.com/bitnami/charts/tree/main/bitnami/thanos
+version: 16.0.12
