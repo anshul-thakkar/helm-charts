@@ -1,0 +1,14 @@
+apiVersion: v2
+appVersion: 8.0.0
+description: Redis(R) is an open source, advanced key-value store. It is often referred
+  to as a data structure server since keys can contain strings, hashes, lists, sets
+  and sorted sets.
+home: https://bitnami.com
+icon: https://bitnami.com/assets/stacks/redis/img/redis-stack-220x234.png
+maintainers:
+- name: Broadcom, Inc. All Rights Reserved.
+  url: https://github.com/bitnami/charts
+name: redis
+sources:
+- https://github.com/bitnami/charts/tree/main/bitnami/redis
+version: 21.0.5
