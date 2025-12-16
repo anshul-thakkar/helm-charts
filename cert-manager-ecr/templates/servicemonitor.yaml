@@ -36,8 +36,18 @@ spec:
         operator: In
         values:
         - {{ include "cainjector.name" . }}
-        - {{ include "cert-manager.namespace" . }}
+        - {{ template "cert-manager.name" . }}
         - {{ include "webhook.name" . }}
+      - key: app.kubernetes.io/instance
+        operator: In
+        values:
+        - {{ .Release.Name }}
+      - key: app.kubernetes.io/component
+        operator: In
+        values:
+        - cainjector
+        - controller
+        - webhook
 {{- if .Values.prometheus.servicemonitor.namespace }}
   namespaceSelector:
     matchNames:
@@ -53,10 +63,6 @@ spec:
     scrapeTimeout: {{ .Values.prometheus.servicemonitor.scrapeTimeout }}
     {{- end }}
     honorLabels: {{ .Values.prometheus.servicemonitor.honorLabels }}
-    {{- if .Values.prometheus.servicemonitor.relabelings }}
-    relabelings:
-      {{- toYaml .Values.prometheus.servicemonitor.relabelings | nindent 6 }}
-    {{- end }}
     {{- with .Values.prometheus.servicemonitor.endpointAdditionalProperties }}
     {{- toYaml . | nindent 4 }}
     {{- end }}
