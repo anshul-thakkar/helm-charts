@@ -1,6 +1,11 @@
+{{- /*
+Copyright Broadcom, Inc. All Rights Reserved.
+SPDX-License-Identifier: APACHE-2.0
+*/}}
+
 {{- if or .Release.IsUpgrade (ne .Values.sentinel.service.type "NodePort")  .Values.sentinel.service.nodePorts.redis -}}
 {{- if and (eq .Values.architecture "replication") .Values.sentinel.enabled }}
-apiVersion: apps/v1
+apiVersion: {{ include "common.capabilities.statefulset.apiVersion" . }}
 kind: StatefulSet
 metadata:
   name: {{ printf "%s-node" (include "common.names.fullname" .) }}
@@ -157,6 +162,10 @@ spec:
               value: {{ .Values.replica.containerPorts.redis | quote }}
             - name: ALLOW_EMPTY_PASSWORD
               value: {{ ternary "no" "yes" .Values.auth.enabled | quote }}
+            {{- if include "common.fips.enabled" . }}
+            - name: OPENSSL_FIPS
+              value: {{ include "common.fips.config" (dict "tech" "openssl" "fips" .Values.replica.fips "global" .Values.global) | quote }}
+            {{- end }}
             {{- if .Values.auth.enabled }}
             {{- if .Values.auth.usePasswordFiles }}
             - name: REDIS_PASSWORD_FILE
@@ -256,7 +265,7 @@ spec:
               command:
                 - /bin/bash
                 - -ec
-                - /health/ping_liveness_local.sh {{ .Values.replica.livenessProbe.timeoutSeconds }}
+                - "/health/ping_liveness_local.sh {{ .Values.replica.livenessProbe.timeoutSeconds }}"
           {{- end }}
           {{- if .Values.replica.customLivenessProbe }}
           livenessProbe: {{- include "common.tplvalues.render" (dict "value" .Values.replica.customLivenessProbe "context" $) | nindent 12 }}
@@ -271,7 +280,7 @@ spec:
               command:
                 - /bin/bash
                 - -ec
-                - /health/ping_liveness_local.sh {{ .Values.replica.livenessProbe.timeoutSeconds }}
+                - "/health/ping_liveness_local.sh {{ .Values.replica.livenessProbe.timeoutSeconds }}"
           {{- end }}
           {{- if .Values.replica.customReadinessProbe }}
           readinessProbe: {{- include "common.tplvalues.render" (dict "value" .Values.replica.customReadinessProbe "context" $) | nindent 12 }}
@@ -286,7 +295,7 @@ spec:
               command:
                 - /bin/bash
                 - -ec
-                - /health/ping_readiness_local.sh {{ .Values.replica.readinessProbe.timeoutSeconds }}
+                - "/health/ping_readiness_local.sh {{ .Values.replica.readinessProbe.timeoutSeconds }}"
           {{- end }}
           {{- end }}
           {{- if .Values.replica.resources }}
@@ -395,6 +404,10 @@ spec:
             - name: ALLOW_EMPTY_PASSWORD
               value: "yes"
             {{- end }}
+            {{- if include "common.fips.enabled" . }}
+            - name: OPENSSL_FIPS
+              value: {{ include "common.fips.config" (dict "tech" "openssl" "fips" .Values.sentinel.fips "global" .Values.global) | quote }}
+            {{- end }}
             - name: REDIS_SENTINEL_TLS_ENABLED
               value: {{ ternary "yes" "no" .Values.tls.enabled | quote }}
             {{- if .Values.tls.enabled }}
@@ -450,7 +463,7 @@ spec:
               command:
                 - /bin/bash
                 - -ec
-                - /health/ping_sentinel.sh {{ .Values.sentinel.livenessProbe.timeoutSeconds }}
+                - "/health/ping_sentinel.sh {{ .Values.sentinel.livenessProbe.timeoutSeconds }}"
           {{- end }}
           {{- if .Values.sentinel.customLivenessProbe }}
           livenessProbe: {{- include "common.tplvalues.render" (dict "value" .Values.sentinel.customLivenessProbe "context" $) | nindent 12 }}
@@ -465,7 +478,7 @@ spec:
               command:
                 - /bin/bash
                 - -ec
-                - /health/ping_sentinel.sh {{ .Values.sentinel.livenessProbe.timeoutSeconds }}
+                - "/health/ping_sentinel.sh {{ .Values.sentinel.livenessProbe.timeoutSeconds }}"
           {{- end }}
           {{- end }}
           {{- if not .Values.diagnosticMode.enabled }}
@@ -482,7 +495,7 @@ spec:
               command:
                 - /bin/bash
                 - -ec
-                - /health/ping_sentinel.sh {{ .Values.sentinel.readinessProbe.timeoutSeconds }}
+                - "/health/ping_sentinel.sh {{ .Values.sentinel.readinessProbe.timeoutSeconds }}"
           {{- end }}
           {{- end }}
           {{- if .Values.sentinel.resources }}
@@ -567,6 +580,12 @@ spec:
                   name: {{ template "redis.secretName" . }}
                   key: {{ template "redis.secretPasswordKey" . }}
             {{- end }}
+            {{- end }}
+            {{- if include "common.fips.enabled" . }}
+            - name: OPENSSL_FIPS
+              value: {{ include "common.fips.config" (dict "tech" "openssl" "fips" .Values.metrics.fips "global" .Values.global) | quote }}
+            - name: GODEBUG
+              value: {{ include "common.fips.config" (dict "tech" "golang" "fips" .Values.metrics.fips "global" .Values.global) | quote }}
             {{- end }}
             {{- if .Values.tls.enabled }}
             - name: REDIS_ADDR
@@ -658,6 +677,13 @@ spec:
           {{- if .Values.kubectl.resources }}
           resources: {{- toYaml .Values.kubectl.resources | nindent 12 }}
           {{- end }}
+          {{- if include "common.fips.enabled" . }}
+          env:
+            - name: OPENSSL_FIPS
+              value: {{ include "common.fips.config" (dict "tech" "openssl" "fips" .Values.metrics.fips "global" .Values.global) | quote }}
+            - name: GODEBUG
+              value: {{ include "common.fips.config" (dict "tech" "golang" "fips" .Values.metrics.fips "global" .Values.global) | quote }}
+          {{- end }}
         {{- end }}
         {{- if .Values.replica.sidecars }}
         {{- include "common.tplvalues.render" (dict "value" .Values.replica.sidecars "context" $) | nindent 8 }}
@@ -686,9 +712,13 @@ spec:
           {{- else }}
           securityContext: {{- .Values.volumePermissions.containerSecurityContext | toYaml | nindent 12 }}
           {{- end }}
-          {{- if .Values.volumePermissions.extraEnvVars }}
           env:
+          {{- if .Values.volumePermissions.extraEnvVars }}
           {{- include "common.tplvalues.render" (dict "value" .Values.volumePermissions.extraEnvVars "context" $) | nindent 12 }}
+          {{- end }}
+          {{- if include "common.fips.enabled" . }}
+            - name: OPENSSL_FIPS
+              value: {{ include "common.fips.config" (dict "tech" "openssl" "fips" .Values.volumePermissions.fips "global" .Values.global) | quote }}
           {{- end }}
           {{- if .Values.volumePermissions.resources }}
           resources: {{- toYaml .Values.volumePermissions.resources | nindent 12 }}

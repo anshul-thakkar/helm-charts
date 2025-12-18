@@ -1,5 +1,10 @@
+{{- /*
+Copyright Broadcom, Inc. All Rights Reserved.
+SPDX-License-Identifier: APACHE-2.0
+*/}}
+
 {{- if and .Values.replica.autoscaling.enabled (not .Values.sentinel.enabled) }}
-apiVersion: autoscaling/v2
+apiVersion: {{ include "common.capabilities.hpa.apiVersion" ( dict "context" $ ) }}
 kind: HorizontalPodAutoscaler
 metadata:
   name: {{ printf "%s-replicas" (include "common.names.fullname" .) }}
@@ -11,7 +16,7 @@ metadata:
   {{- end }}
 spec:
   scaleTargetRef:
-    apiVersion: apps/v1
+    apiVersion: {{ include "common.capabilities.deployment.apiVersion" . }}
     kind: StatefulSet
     name: {{ printf "%s-replicas" (include "common.names.fullname" .) }}
   minReplicas: {{ .Values.replica.autoscaling.minReplicas }}
